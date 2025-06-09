@@ -1,0 +1,70 @@
+@mixin absTopLeft($top: 0, $left: 0) {
+  position: absolute;
+  top: $top;
+  left: $left;
+}
+
+@mixin absTopRight($top: 0, $right: 0) {
+  position: absolute;
+  top: $top;
+  right: $right;
+}
+
+@mixin absBottomLeft($bottom: 0, $left: 0) {
+  position: absolute;
+  left: $left;
+  bottom: $bottom;
+}
+
+@mixin absBottomRight($bottom: 0, $right: 0) {
+  position: absolute;
+  right: $right;
+  bottom: $bottom;
+}
+
+
+@mixin flexBox($dir: column, $jc: center, $ai: center, $gap: unset) {
+  display: flex;
+  justify-content: $jc;
+  align-items: $ai;
+  flex-direction: $dir;
+  gap: $gap;
+}
+
+@mixin circle($diametr) {
+  width: $diametr;
+  height: $diametr;
+  border-radius: 50%;
+}
+
+@mixin rectangle($w, $h) {
+  width: $w;
+  height: $h;
+}
+
+@mixin square($size) {
+  @include rectangle($size, $size);
+}
+
+@mixin text($fName, $fSize, $fWeight, $fHeight: 116.099%, $align: center) {
+  font-family: $fName, sans-serif;
+  font-size: $fSize;
+  font-style: normal;
+  font-weight: $fWeight;
+  line-height: $fHeight;
+  text-align: $align;
+}
+
+@mixin textWithoutFName($fSize, $fWeight, $lHeight: 116.099%) {
+  font-size: $fSize;
+  font-style: normal;
+  font-weight: $fWeight;
+  line-height: $lHeight;
+}
+
+@mixin backgroundImage($url, $size: auto) {
+  background-image: url($url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: $size;
+}
