@@ -7,7 +7,6 @@ import {
   adjustSlots,
   createEventId,
   formatToYYYYMMDD,
-  getActiveElement,
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
@@ -40,6 +39,7 @@ const popup = ref<TPopup>(defPopupState);
 
 const handleDateSelect = async (selectInfo: ISelectInfo) => {
   await nextTick();
+
   lastSelectInfo.value = selectInfo;
 
   if (selectInfo.allDay) {
@@ -47,28 +47,19 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
     slots.value = [...updatedSlots];
   }
 
-  const dateShort = formatToYYYYMMDD(selectInfo.startStr);
-  const activeCell = setActiveCell(dateShort);
-
-  console.log({ activeCell });
-  console.log("selectInfo.startStr", dateShort);
-
-  if (activeCell) {
-    const rect = activeCell.getBoundingClientRect();
-    const containerRect = document
-      .querySelector(".calendar-wrapper")
-      ?.getBoundingClientRect();
-
-    if (containerRect) {
-      popup.value = {
-        visible: true,
-        top: rect.top,
-        left: rect.left - containerRect.left + rect.width / 2,
-        date: selectInfo.dateStr,
-        cellElement: getActiveElement(selectInfo.startStr),
-      };
-    }
+  let activeCell = null;
+  if (selectInfo.allDay) {
+    const dateShort = formatToYYYYMMDD(selectInfo.startStr);
+    activeCell = setActiveCell(dateShort);
   }
+
+  popup.value = {
+    visible: true,
+    top: selectInfo.jsEvent.screenY - 200,
+    left: selectInfo.jsEvent.screenX - 200,
+    date: selectInfo.dateStr,
+    cellElement: activeCell,
+  };
 };
 
 const onClosePopupHandler = () => {
@@ -132,9 +123,6 @@ const calendarOptions = {
   select: handleDateSelect,
   eventClick: handleEventClick,
   eventsSet: handleEvents,
-  /*eventAdd:
-  eventChange:
-  eventRemove:*/
 };
 </script>
 
@@ -146,7 +134,6 @@ const calendarOptions = {
   >
     <FullCalendar ref="calendarRef" :options="calendarOptions"> </FullCalendar>
     <DatePopup
-      v-if="lastSelectInfo && slots"
       :info="lastSelectInfo"
       :hours="slots"
       :is-visible="popup.visible"
