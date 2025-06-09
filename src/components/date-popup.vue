@@ -2,41 +2,65 @@
 import { type Ref, ref, toRefs } from "vue";
 import { watchOutsideCalendarClick } from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
-import type { THour } from "@/types/calendar.ts";
+import type {
+  ISelectInfo,
+  TFormData,
+  TFormDto,
+  THour,
+} from "@/types/calendar.ts";
 
 type TProps = {
   isVisible: boolean;
   top: string;
   left: string;
-  info: Ref<any>;
+  info: Ref<ISelectInfo>;
   hours: THour[];
 };
 
 const props = defineProps<TProps>();
 const { isVisible, top, left, info, hours } = toRefs(props);
 
-const emit = defineEmits(["onClosePopup", "onAddEvent"]);
-
-export type TFormData = {
-  name: string;
-  time: string;
-};
+const emit = defineEmits<{
+  (e: "onAddEvent", arg: TFormDto): void;
+  (e: "onClosePopup"): void;
+}>();
 
 const defaultFormData = {
   name: "",
   time: "",
 };
 
-const eventData = ref<TFormData>(defaultFormData);
+const formData = ref<TFormData>(defaultFormData);
 
 const onClosePopupHandler = () => {
   emit("onClosePopup");
-  eventData.value.name = "";
-  eventData.value.time = "";
+  formData.value.name = "";
+  formData.value.time = "";
 };
 
 const onAddEventHandler = () => {
-  emit("onAddEvent", eventData.value);
+  console.log(
+    new Date(
+      new Date(info.value.startStr).setHours(
+        new Date(info.value.startStr).getHours() + 2,
+      ),
+    ),
+  );
+
+  emit("onAddEvent", {
+    name: formData.value.name,
+    timeStart: info.value.allDay
+      ? new Date(info.value.startStr).setHours(
+          formData.value.time.split(":")[0],
+        )
+      : new Date(info.value.startStr),
+    timeEnd: info.value.allDay
+      ? new Date(info.value.startStr).setHours(
+          +formData.value.time.split(":")[0] + 2,
+        )
+      : new Date(info.value.endStr),
+  });
+
   onClosePopupHandler();
 };
 
@@ -64,20 +88,22 @@ watchOutsideCalendarClick(() => {
     <input
       required
       type="text"
-      v-model="eventData.name"
+      v-model="formData.name"
       placeholder="Event title"
       class="mt-2 border p-1 w-full"
     />
-    <input disabled type="date" :value="info.startStr" id="date" />
 
-    <div>
-      <label for="hourSelect">Hour:</label>
+    <div v-if="info.allDay">
+      <input disabled type="date" :value="info.startStr" id="date" />
+      <div>
+        <label for="hourSelect">Hour:</label>
 
-      <select required v-model="eventData.time" id="hourSelect" name="hour">
-        <option v-for="item in hours" :key="item.id" :disabled="item.booked">
-          {{ item.value }}
-        </option>
-      </select>
+        <select required v-model="formData.time" id="hourSelect" name="hour">
+          <option v-for="item in hours" :key="item.id" :disabled="item.booked">
+            {{ item.value }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <button

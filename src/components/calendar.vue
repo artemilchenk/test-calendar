@@ -4,17 +4,16 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import {
+  adjustSlots,
   createEventId,
+  formatToYYYYMMDD,
   getActiveElement,
-  getIsoDate,
-  getTimeFromIso,
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { nextTick, ref, watch } from "vue";
-import DatePopup, { type TFormData } from "@/components/date-popup.vue";
-import { hours } from "@/mocks/hour-select.ts";
-import type { THour } from "@/types/calendar.ts";
+import { nextTick, ref } from "vue";
+import type { ISelectInfo, TFormDto, THour } from "@/types/calendar.ts";
+import DatePopup from "@/components/date-popup.vue";
 
 type TPopup = {
   visible: boolean;
@@ -33,70 +32,26 @@ const defPopupState = {
 };
 
 const calendarRef = ref();
-const lastSelectInfo = ref();
+const lastSelectInfo = ref<ISelectInfo>();
 const currentEvents = ref();
-const filteredHours = ref<THour[] | null>(null);
+const slots = ref<THour[] | null>(null);
 
 const popup = ref<TPopup>(defPopupState);
 
-const handleDateSelect = async (selectInfo: any) => {
+const handleDateSelect = async (selectInfo: ISelectInfo) => {
   await nextTick();
-  let calendarApi = selectInfo.view.calendar;
-
-  //adjust hours start
-  const allEvents = calendarApi.getEvents();
-
-  const eventsForDate = allEvents.filter((event: any) => {
-    return event.startStr.slice(0, 10) === selectInfo.startStr;
-  });
-
-  hours.forEach((hour: THour) => (hour.booked = false));
-
-  eventsForDate.forEach((event: any) => {
-    const effectedSlots = hours.filter((slot: THour) => {
-      let [slotHours] = slot.value.split(":");
-
-      const slotHourStart = new Date();
-      slotHourStart.setHours(slotHours);
-      const slotHourEnd = new Date();
-      slotHourEnd.setHours(+slotHours + 2);
-
-      const eventHourStart = new Date();
-      eventHourStart.setHours(new Date(event.startStr).getHours());
-      const eventHourEnd = new Date();
-      eventHourEnd.setHours(new Date(event.endStr).getHours());
-
-      return !(slotHourEnd <= eventHourStart || slotHourStart >= eventHourEnd);
-    });
-
-    effectedSlots.forEach((effectedSlot: THour) => {
-      const slotIndex = hours.findIndex(
-        (hour: THour) => hour.id === effectedSlot.id,
-      );
-      if (slotIndex > -1) hours[slotIndex].booked = true;
-    });
-  });
-
-  filteredHours.value = [...hours];
-  //adjust hours end
-
-  if (!selectInfo.allDay) {
-    const name = prompt("Enter event name");
-
-    calendarApi.addEvent({
-      id: createEventId(),
-      title: name,
-      start: selectInfo.startStr,
-      end: selectInfo.endStr,
-      allDay: selectInfo.allDay,
-    });
-
-    return;
-  }
-
   lastSelectInfo.value = selectInfo;
 
-  const activeCell = setActiveCell(selectInfo.startStr);
+  if (selectInfo.allDay) {
+    const updatedSlots = adjustSlots(selectInfo);
+    slots.value = [...updatedSlots];
+  }
+
+  const dateShort = formatToYYYYMMDD(selectInfo.startStr);
+  const activeCell = setActiveCell(dateShort);
+
+  console.log({ activeCell });
+  console.log("selectInfo.startStr", dateShort);
 
   if (activeCell) {
     const rect = activeCell.getBoundingClientRect();
@@ -121,28 +76,18 @@ const onClosePopupHandler = () => {
   popup.value = defPopupState;
 };
 
-const addEventHandler = (formData: TFormData) => {
-  const selectInfo = lastSelectInfo.value;
+const addEventHandler = (formData: TFormDto) => {
+  let calendarApi = lastSelectInfo.value.view.calendar;
 
-  const startTimeIso = getIsoDate(selectInfo.startStr, formData.time);
+  calendarApi.addEvent({
+    id: createEventId(),
+    title: formData.name,
+    start: formData.timeStart,
+    end: formData.timeEnd,
+    allDay: false,
+  });
 
-  const date = new Date(startTimeIso);
-  date.setHours(date.getHours() + 2);
-  const endTimeIso = date.toISOString();
-
-  if (selectInfo) {
-    let calendarApi = selectInfo.view.calendar;
-
-    calendarApi.addEvent({
-      id: createEventId(),
-      title: formData.name,
-      start: startTimeIso,
-      end: endTimeIso,
-      allDay: false,
-    });
-
-    onClosePopupHandler();
-  }
+  onClosePopupHandler();
 };
 
 const handleEventClick = (clickInfo: any) => {
@@ -201,9 +146,9 @@ const calendarOptions = {
   >
     <FullCalendar ref="calendarRef" :options="calendarOptions"> </FullCalendar>
     <DatePopup
-      v-if="lastSelectInfo && filteredHours"
+      v-if="lastSelectInfo && slots"
       :info="lastSelectInfo"
-      :hours="filteredHours"
+      :hours="slots"
       :is-visible="popup.visible"
       :top="popup.top"
       :left="popup.left"
