@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type Ref, ref, toRefs } from "vue";
-import { watchOutsideCalendarClick } from "@/event-utils.ts";
+import { type Ref, ref, toRefs, watch } from "vue";
+import { formatToYYYYMMDD, watchOutsideCalendarClick } from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
 import type {
   ISelectInfo,
@@ -93,8 +93,14 @@ watchOutsideCalendarClick(() => {
       class="mt-2 border p-1 w-full"
     />
 
+    <input
+      disabled
+      type="date"
+      :value="formatToYYYYMMDD(info.startStr)"
+      id="date"
+    />
+
     <div v-if="info.allDay">
-      <input disabled type="date" :value="info.startStr" id="date" />
       <div>
         <label for="hourSelect">Hour:</label>
 
