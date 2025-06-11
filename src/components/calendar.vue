@@ -62,7 +62,7 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
 const closePopup = () => {
   activeCell.value?.classList.remove("active");
   activeCell.value = null;
-  //activeEvent.value = null;
+  activeEvent.value = null;
   popup.value.visible = false;
 };
 
