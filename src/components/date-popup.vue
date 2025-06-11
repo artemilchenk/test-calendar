@@ -1,27 +1,26 @@
 <script setup lang="ts">
-import { type Ref, ref, toRefs, watch } from "vue";
-import { formatToYYYYMMDD, watchOutsideCalendarClick } from "@/event-utils.ts";
+import { reactive, type Ref, ref, toRefs, watch } from "vue";
+import { formatToYYYYMMDD } from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
 import type {
   ISelectInfo,
   TFormData,
   TFormDto,
   THour,
+  TPopup,
 } from "@/types/calendar.ts";
 
-type TProps = {
-  isVisible: boolean;
-  top: string;
-  left: string;
+type TPopupProps = {
   info: Ref<ISelectInfo>;
   hours: THour[];
+  popup: TPopup;
 };
 
-const props = defineProps<TProps>();
-const { isVisible, top, left, info, hours } = toRefs(props);
+const props = defineProps<TPopupProps>();
+const { info, hours, popup } = toRefs(props);
 
 const emit = defineEmits<{
-  (e: "onAddEvent", arg: TFormDto): void;
+  (e: "onSubmit", arg: TFormDto): void;
   (e: "onClosePopup"): void;
 }>();
 
@@ -30,53 +29,43 @@ const defaultFormData = {
   time: "",
 };
 
-const formData = ref<TFormData>(defaultFormData);
+let formData = ref<TFormData>(defaultFormData);
+
+const resetPopupForm = () => {
+  formData.value.time = "";
+  formData.value.name = "";
+};
 
 const onClosePopupHandler = () => {
+  resetPopupForm();
   emit("onClosePopup");
-  formData.value.name = "";
-  formData.value.time = "";
 };
 
-const onAddEventHandler = () => {
-  console.log(
-    new Date(
-      new Date(info.value.startStr).setHours(
-        new Date(info.value.startStr).getHours() + 2,
-      ),
-    ),
-  );
+const onSubmitHandler = () => {
+  const allDayStart = new Date(info.value.startStr);
+  allDayStart.setHours(formData.value.time.split(":")[0]);
 
-  emit("onAddEvent", {
+  const allDayEnd = new Date(info.value.startStr);
+  allDayEnd.setHours(+formData.value.time.split(":")[0] + 2);
+
+  emit("onSubmit", {
     name: formData.value.name,
-    timeStart: info.value.allDay
-      ? new Date(info.value.startStr).setHours(
-          formData.value.time.split(":")[0],
-        )
-      : new Date(info.value.startStr),
-    timeEnd: info.value.allDay
-      ? new Date(info.value.startStr).setHours(
-          +formData.value.time.split(":")[0] + 2,
-        )
-      : new Date(info.value.endStr),
+    timeStart: info.value.allDay ? allDayStart : info.value.startStr,
+    timeEnd: info.value.allDay ? allDayEnd : info.value.endStr,
   });
 
-  onClosePopupHandler();
+  resetPopupForm();
 };
-
-watchOutsideCalendarClick(() => {
-  onClosePopupHandler();
-});
 </script>
 
 <template>
   <div
-    v-if="isVisible"
+    v-if="popup.visible"
     class="popup"
     :style="{
       position: 'absolute',
-      top: top + 'px',
-      left: left + 'px',
+      top: popup.top + 'px',
+      left: popup.left + 'px',
       zIndex: 1000,
     }"
     @click.stop
@@ -114,7 +103,7 @@ watchOutsideCalendarClick(() => {
 
     <button
       class="mt-2 bg-blue-500 text-white px-3 py-1 rounded"
-      @click="onAddEventHandler"
+      @click="onSubmitHandler"
     >
       Save
     </button>

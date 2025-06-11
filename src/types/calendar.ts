@@ -26,3 +26,10 @@ export interface ISelectInfo {
   allDay: boolean;
   view: ViewApi;
 }
+
+export type TPopup = {
+  visible: boolean;
+  top: number;
+  left: number;
+  date: string;
+};

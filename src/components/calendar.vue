@@ -10,31 +10,22 @@ import {
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { nextTick, ref } from "vue";
-import type { ISelectInfo, TFormDto, THour } from "@/types/calendar.ts";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
+import type { ISelectInfo, TFormDto, THour, TPopup } from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
-
-type TPopup = {
-  visible: boolean;
-  top: number;
-  left: number;
-  date: string;
-  cellElement: Element | null;
-};
 
 const defPopupState = {
   visible: false,
   top: 0,
   left: 0,
   date: "",
-  cellElement: null,
 };
 
 const calendarRef = ref();
 const lastSelectInfo = ref<ISelectInfo>();
 const currentEvents = ref();
 const slots = ref<THour[] | null>(null);
-
+const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
 
 const handleDateSelect = async (selectInfo: ISelectInfo) => {
@@ -47,10 +38,9 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
     slots.value = [...updatedSlots];
   }
 
-  let activeCell = null;
   if (selectInfo.allDay) {
     const dateShort = formatToYYYYMMDD(selectInfo.startStr);
-    activeCell = setActiveCell(dateShort);
+    activeCell.value = setActiveCell(dateShort);
   }
 
   popup.value = {
@@ -58,27 +48,35 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
     top: selectInfo.jsEvent.screenY - 200,
     left: selectInfo.jsEvent.screenX - 200,
     date: selectInfo.dateStr,
-    cellElement: activeCell,
   };
 };
 
-const onClosePopupHandler = () => {
-  popup.value.cellElement?.classList.remove("active");
-  popup.value = defPopupState;
+const closePopup = () => {
+  activeCell.value?.classList.remove("active");
+  activeCell.value = null;
+  popup.value.visible = false;
 };
 
-const addEventHandler = (formData: TFormDto) => {
+const onClosePopup = () => {
+  closePopup();
+};
+
+const addEvent = (formData: TFormDto) => {
   let calendarApi = lastSelectInfo.value.view.calendar;
 
   calendarApi.addEvent({
     id: createEventId(),
     title: formData.name,
-    start: formData.timeStart,
-    end: formData.timeEnd,
+    start: new Date(formData.timeStart).toISOString(),
+    end: new Date(formData.timeEnd).toISOString(),
     allDay: false,
   });
 
-  onClosePopupHandler();
+  closePopup();
+};
+
+const onSubmit = (formDataDto: TFormDto) => {
+  addEvent(formDataDto);
 };
 
 const handleEventClick = (clickInfo: any) => {
@@ -124,6 +122,22 @@ const calendarOptions = {
   eventClick: handleEventClick,
   eventsSet: handleEvents,
 };
+
+function handleClickOutside(event: any) {
+  const el = document.querySelector(".popup");
+
+  if (el && !el.contains(event.target)) {
+    closePopup();
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("mousedown", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("mousedown", handleClickOutside);
+});
 </script>
 
 <template>
@@ -136,11 +150,10 @@ const calendarOptions = {
     <DatePopup
       :info="lastSelectInfo"
       :hours="slots"
-      :is-visible="popup.visible"
-      :top="popup.top"
-      :left="popup.left"
-      @onClosePopup="onClosePopupHandler"
-      @onAddEvent="addEventHandler"
+      :popup="popup"
+      @onClosePopup="onClosePopup"
+      :closePopup="closePopup"
+      @onSubmit="onSubmit"
     />
   </div>
 </template>
