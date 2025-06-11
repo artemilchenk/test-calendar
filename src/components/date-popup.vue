@@ -1,35 +1,40 @@
 <script setup lang="ts">
-import { reactive, type Ref, ref, toRefs, watch } from "vue";
-import { formatToYYYYMMDD } from "@/event-utils.ts";
+import { type Ref, ref, toRefs, watch } from "vue";
+import { formatHHMM, formatToYYYYMMDD } from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
 import type {
   ISelectInfo,
   TFormData,
-  TFormDto,
+  TEventDto,
   THour,
   TPopup,
+  IEvent,
 } from "@/types/calendar.ts";
 
 type TPopupProps = {
   info: Ref<ISelectInfo>;
   hours: THour[];
   popup: TPopup;
+  activeEvent: Ref<IEvent>;
 };
 
 const props = defineProps<TPopupProps>();
-const { info, hours, popup } = toRefs(props);
+const { info, hours, popup, activeEvent } = toRefs(props);
 
 const emit = defineEmits<{
-  (e: "onSubmit", arg: TFormDto): void;
+  (e: "onSubmit", arg: TEventDto): void;
   (e: "onClosePopup"): void;
 }>();
 
-const defaultFormData = {
+let formData = ref<TFormData>({
   name: "",
   time: "",
-};
+});
 
-let formData = ref<TFormData>(defaultFormData);
+watch(activeEvent, (value) => {
+  formData.value.name = value?.title || "";
+  formData.value.time = formatHHMM(value?.startStr || "");
+});
 
 const resetPopupForm = () => {
   formData.value.time = "";

@@ -3,6 +3,7 @@ import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+
 import {
   adjustSlots,
   createEventId,
@@ -10,8 +11,16 @@ import {
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { nextTick, onMounted, onUnmounted, ref } from "vue";
-import type { ISelectInfo, TFormDto, THour, TPopup } from "@/types/calendar.ts";
+import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import type {
+  IClickInfo,
+  IEvent,
+  ISelectInfo,
+  TEventDto,
+  TEventUpdateDto,
+  THour,
+  TPopup,
+} from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
 
 const defPopupState = {
@@ -27,6 +36,7 @@ const currentEvents = ref();
 const slots = ref<THour[] | null>(null);
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
+const activeEvent = ref<IEvent | null>(null);
 
 const handleDateSelect = async (selectInfo: ISelectInfo) => {
   await nextTick();
@@ -54,6 +64,7 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
 const closePopup = () => {
   activeCell.value?.classList.remove("active");
   activeCell.value = null;
+  //activeEvent.value = null;
   popup.value.visible = false;
 };
 
@@ -61,36 +72,53 @@ const onClosePopup = () => {
   closePopup();
 };
 
-const addEvent = (formData: TFormDto) => {
+const addEvent = (eventDto: TEventDto) => {
   let calendarApi = lastSelectInfo.value.view.calendar;
 
   calendarApi.addEvent({
     id: createEventId(),
-    title: formData.name,
-    start: new Date(formData.timeStart).toISOString(),
-    end: new Date(formData.timeEnd).toISOString(),
+    title: eventDto.name,
+    start: new Date(eventDto.timeStart).toISOString(),
+    end: new Date(eventDto.timeEnd).toISOString(),
     allDay: false,
   });
 
   closePopup();
 };
 
-const onSubmit = (formDataDto: TFormDto) => {
-  addEvent(formDataDto);
+const updateEvent = (eventBody: Partial<TEventDto>) => {
+  console.log(activeEvent.value);
+  activeEvent.value.setProp("title", eventBody.name);
+  activeEvent.value.setStart(new Date(eventBody.timeStart).toISOString());
+  activeEvent.value.setEnd(new Date(eventBody.timeEnd).toISOString());
+  console.log({ event: activeEvent.value });
 };
 
-const handleEventClick = (clickInfo: any) => {
-  if (
-    confirm(
-      `Are you sure you want to delete the event '${clickInfo.event.title}'`,
-    )
-  ) {
-    clickInfo.event.remove();
+const onSubmit = (formDataDto: TEventDto) => {
+  if (activeEvent.value) {
+    updateEvent(formDataDto);
+    closePopup();
+  } else {
+    addEvent(formDataDto);
   }
 };
 
-const handleEvents = (events: any) => {
+const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
+  console.log({ events });
+};
+
+const handleEventClick = (selectInfo: IClickInfo) => {
+  activeEvent.value = currentEvents.value.find(
+    (event: IEvent) => event.id === selectInfo.event.id,
+  );
+
+  popup.value = {
+    visible: true,
+    top: selectInfo.jsEvent.screenY - 200,
+    left: selectInfo.jsEvent.screenX - 200,
+    date: selectInfo.dateStr,
+  };
 };
 
 const calendarOptions = {
@@ -121,6 +149,7 @@ const calendarOptions = {
   select: handleDateSelect,
   eventClick: handleEventClick,
   eventsSet: handleEvents,
+  updateEvent: updateEvent,
 };
 
 function handleClickOutside(event: any) {
@@ -148,6 +177,7 @@ onUnmounted(() => {
   >
     <FullCalendar ref="calendarRef" :options="calendarOptions"> </FullCalendar>
     <DatePopup
+      :activeEvent="activeEvent"
       :info="lastSelectInfo"
       :hours="slots"
       :popup="popup"

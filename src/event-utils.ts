@@ -5,6 +5,18 @@ let eventGuid = 0;
 export const formatToYYYYMMDD = (isoDate: string) =>
   new Date(isoDate).toISOString().replace(/T.*$/, "");
 
+export const formatHHMM = (dateArg: Date | string) => {
+  const date = new Date(dateArg);
+  const hours = date.getHours();
+  let minutes: string | number = date.getMinutes();
+
+  if (`${minutes}`.length < 2) {
+    minutes = "0" + minutes;
+  }
+
+  return `${hours}:${minutes}`;
+};
+
 export const INITIAL_EVENTS = [];
 export function createEventId() {
   return String(eventGuid++);
