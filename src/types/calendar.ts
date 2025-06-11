@@ -1,5 +1,5 @@
-import { ViewApi } from "@fullcalendar/core";
-import { EventInput } from "@fullcalendar/core";
+import { type ViewApi } from "@fullcalendar/core";
+import { type EventInput } from "@fullcalendar/core";
 
 export type THour = {
   id: number;
@@ -15,8 +15,8 @@ export type TFormData = {
 
 export type TEventDto = {
   name: string;
-  timeStart: Date;
-  timeEnd: Date;
+  timeStart: Date | string;
+  timeEnd: Date | string;
 };
 
 export type TEventUpdateDto = {
@@ -34,6 +34,9 @@ export interface ISelectInfo {
   endStr: string;
   allDay: boolean;
   view: ViewApi;
+  jsEvent: any;
+  dateStr: string;
+  event: any;
 }
 
 export interface IClickInfo extends ISelectInfo {

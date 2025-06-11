@@ -10,7 +10,7 @@ import { sideBarItems } from "@/mocks/side-bar.ts";
       :key="item.id"
       :title="item.title"
       :icon-src="item.icon"
-      :is-active="item.isActive"
+      :is-active="!!item.isActive"
     />
   </aside>
 </template>

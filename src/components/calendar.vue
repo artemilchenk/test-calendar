@@ -11,17 +11,15 @@ import {
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 import type {
-  IClickInfo,
   IEvent,
   ISelectInfo,
   TEventDto,
-  TEventUpdateDto,
-  THour,
   TPopup,
 } from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
+import { type CalendarOptions } from "@fullcalendar/core";
 
 const defPopupState = {
   visible: false,
@@ -31,12 +29,12 @@ const defPopupState = {
 };
 
 const calendarRef = ref();
-const lastSelectInfo = ref<ISelectInfo>();
+const lastSelectInfo = ref();
 const currentEvents = ref();
-const slots = ref<THour[] | null>(null);
+const slots = ref();
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
-const activeEvent = ref<IEvent | null>(null);
+const activeEvent = ref();
 
 const handleDateSelect = async (selectInfo: ISelectInfo) => {
   await nextTick();
@@ -86,12 +84,12 @@ const addEvent = (eventDto: TEventDto) => {
   closePopup();
 };
 
-const updateEvent = (eventBody: Partial<TEventDto>) => {
-  console.log(activeEvent.value);
+const updateEvent = (eventBody: TEventDto) => {
+  if (!activeEvent?.value) return;
+
   activeEvent.value.setProp("title", eventBody.name);
   activeEvent.value.setStart(new Date(eventBody.timeStart).toISOString());
   activeEvent.value.setEnd(new Date(eventBody.timeEnd).toISOString());
-  console.log({ event: activeEvent.value });
 };
 
 const onSubmit = (formDataDto: TEventDto) => {
@@ -108,16 +106,16 @@ const handleEvents = (events: IEvent) => {
   console.log({ events });
 };
 
-const handleEventClick = (selectInfo: IClickInfo) => {
+const handleEventClick = (selectInfo: ISelectInfo) => {
   activeEvent.value = currentEvents.value.find(
     (event: IEvent) => event.id === selectInfo.event.id,
   );
 
   popup.value = {
     visible: true,
-    top: selectInfo.jsEvent.screenY - 200,
-    left: selectInfo.jsEvent.screenX - 200,
-    date: selectInfo.dateStr,
+    top: selectInfo?.jsEvent.screenY - 200,
+    left: selectInfo?.jsEvent.screenX - 200,
+    date: selectInfo?.dateStr,
   };
 };
 
@@ -175,7 +173,11 @@ onUnmounted(() => {
     class="calendar-wrapper"
     style="position: relative"
   >
-    <FullCalendar ref="calendarRef" :options="calendarOptions"> </FullCalendar>
+    <FullCalendar
+      ref="calendarRef"
+      :options="calendarOptions as unknown as CalendarOptions"
+    >
+    </FullCalendar>
     <DatePopup
       :activeEvent="activeEvent"
       :info="lastSelectInfo"

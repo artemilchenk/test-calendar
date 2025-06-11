@@ -3,7 +3,6 @@ import NotificationIcon from "@/components/app-header/notification-icon.vue";
 import DialogIcon from "@/components/app-header/dialog-icon.vue";
 import SupportIcon from "@/components/app-header/support-icon.vue";
 import SerchIcon from "@/components/app-header/serch-icon.vue";
-import UserImg from "@/components/ui/avatar.vue";
 import ArrowDown from "@/components/app-header/arrow-down-icon.vue";
 import Avatar from "@/components/ui/avatar.vue";
 </script>

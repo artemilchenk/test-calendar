@@ -48,7 +48,7 @@ const onClosePopupHandler = () => {
 
 const onSubmitHandler = () => {
   const allDayStart = new Date(info.value.startStr);
-  allDayStart.setHours(formData.value.time.split(":")[0]);
+  allDayStart.setHours(+formData.value.time.split(":")[0]);
 
   const allDayEnd = new Date(info.value.startStr);
   allDayEnd.setHours(+formData.value.time.split(":")[0] + 2);

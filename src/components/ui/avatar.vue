@@ -2,7 +2,7 @@
 import { toRefs } from "vue";
 
 type TProps = {
-  radius: number;
+  radius: string;
 };
 
 const props = defineProps<TProps>();
@@ -11,8 +11,8 @@ const { radius } = toRefs(props);
 
 <template>
   <img
-    :width="radius * 2"
-    :height="radius * 2"
+    :width="+radius * 2"
+    :height="+radius * 2"
     src="@/assets/images/avatar.png"
     alt="Avatar Image"
   />
