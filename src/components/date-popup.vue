@@ -54,8 +54,12 @@ const onSubmitHandler = () => {
     : lastInfo.value.startStr;
 
   const lastInfoStartEnd = isClickInfo(lastInfo.value)
-    ? lastInfo.value.event.startStr
-    : lastInfo.value.startStr;
+    ? isAllDay.value
+      ? lastInfo.value.event.startStr
+      : lastInfo.value.event.endStr
+    : isAllDay.value
+      ? lastInfo.value.startStr
+      : lastInfo.value.endStr;
 
   const allDayStart = new Date(lastInfoStartStr);
   allDayStart.setHours(+formData.value.time.split(":")[0]);

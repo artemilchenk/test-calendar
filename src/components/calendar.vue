@@ -37,7 +37,7 @@ const activeEvent = ref();
 const isAllDay = ref();
 
 const handleDateSelect = async (selectInfo: DateSelectArg) => {
-  isAllDay.value = !!selectInfo?.allDay;
+  isAllDay.value = selectInfo.allDay;
 
   lastInfo.value = selectInfo;
 
@@ -106,6 +106,8 @@ const onSubmit = (formDataDto: TEventDto) => {
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
+
+  console.log({ events });
 };
 
 const handleEventClick = (clickInfo: EventClickArg) => {
