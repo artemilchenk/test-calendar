@@ -3,23 +3,25 @@ import { type Ref, ref, toRefs, watch } from "vue";
 import { formatHHMM, formatToYYYYMMDD } from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
 import type {
-  ISelectInfo,
   TFormData,
   TEventDto,
   THour,
   TPopup,
   IEvent,
 } from "@/types/calendar.ts";
+import { type DateSelectArg, type EventClickArg } from "@fullcalendar/core";
+import { isClickInfo } from "@/guards/calendar.ts";
 
 type TPopupProps = {
-  info: Ref<ISelectInfo>;
+  lastInfo: Ref<DateSelectArg | EventClickArg>;
   hours: THour[];
   popup: TPopup;
   activeEvent: Ref<IEvent>;
+  isAllDay: Ref<boolean>;
 };
 
 const props = defineProps<TPopupProps>();
-const { info, hours, popup, activeEvent } = toRefs(props);
+const { lastInfo, hours, popup, activeEvent, isAllDay } = toRefs(props);
 
 const emit = defineEmits<{
   (e: "onSubmit", arg: TEventDto): void;
@@ -47,16 +49,24 @@ const onClosePopupHandler = () => {
 };
 
 const onSubmitHandler = () => {
-  const allDayStart = new Date(info.value.startStr);
+  const lastInfoStartStr = isClickInfo(lastInfo.value)
+    ? lastInfo.value.event.startStr
+    : lastInfo.value.startStr;
+
+  const lastInfoStartEnd = isClickInfo(lastInfo.value)
+    ? lastInfo.value.event.startStr
+    : lastInfo.value.startStr;
+
+  const allDayStart = new Date(lastInfoStartStr);
   allDayStart.setHours(+formData.value.time.split(":")[0]);
 
-  const allDayEnd = new Date(info.value.startStr);
+  const allDayEnd = new Date(lastInfoStartEnd);
   allDayEnd.setHours(+formData.value.time.split(":")[0] + 2);
 
   emit("onSubmit", {
     name: formData.value.name,
-    timeStart: info.value.allDay ? allDayStart : info.value.startStr,
-    timeEnd: info.value.allDay ? allDayEnd : info.value.endStr,
+    timeStart: isAllDay.value ? allDayStart : lastInfoStartStr,
+    timeEnd: isAllDay.value ? allDayEnd : lastInfoStartEnd,
   });
 
   resetPopupForm();
@@ -90,11 +100,15 @@ const onSubmitHandler = () => {
     <input
       disabled
       type="date"
-      :value="formatToYYYYMMDD(info.startStr)"
+      :value="
+        formatToYYYYMMDD(
+          isClickInfo(lastInfo) ? lastInfo.event.startStr : lastInfo.startStr,
+        )
+      "
       id="date"
     />
 
-    <div v-if="info.allDay">
+    <div v-if="isAllDay">
       <div>
         <label for="hourSelect">Hour:</label>
 

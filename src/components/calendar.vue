@@ -11,15 +11,14 @@ import {
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { nextTick, onMounted, onUnmounted, ref } from "vue";
-import type {
-  IEvent,
-  ISelectInfo,
-  TEventDto,
-  TPopup,
-} from "@/types/calendar.ts";
+import { onMounted, onUnmounted, ref } from "vue";
+import type { IEvent, TEventDto, TPopup } from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
-import { type CalendarOptions } from "@fullcalendar/core";
+import {
+  type CalendarOptions,
+  type DateSelectArg,
+  type EventClickArg,
+} from "@fullcalendar/core";
 
 const defPopupState = {
   visible: false,
@@ -29,17 +28,18 @@ const defPopupState = {
 };
 
 const calendarRef = ref();
-const lastSelectInfo = ref();
+const lastInfo = ref();
 const currentEvents = ref();
 const slots = ref();
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
 const activeEvent = ref();
+const isAllDay = ref();
 
-const handleDateSelect = async (selectInfo: ISelectInfo) => {
-  await nextTick();
+const handleDateSelect = async (selectInfo: DateSelectArg) => {
+  isAllDay.value = !!selectInfo?.allDay;
 
-  lastSelectInfo.value = selectInfo;
+  lastInfo.value = selectInfo;
 
   if (selectInfo.allDay) {
     const updatedSlots = adjustSlots(selectInfo);
@@ -51,18 +51,21 @@ const handleDateSelect = async (selectInfo: ISelectInfo) => {
     activeCell.value = setActiveCell(dateShort);
   }
 
+  if (!selectInfo.jsEvent) return;
+
+  const date = new Date(selectInfo.start);
+
   popup.value = {
     visible: true,
     top: selectInfo.jsEvent.screenY - 200,
-    left: selectInfo.jsEvent.screenX - 200,
-    date: selectInfo.dateStr,
+    left: selectInfo?.jsEvent?.screenX - 200,
+    date: date.toISOString(),
   };
 };
 
 const closePopup = () => {
   activeCell.value?.classList.remove("active");
   activeCell.value = null;
-  activeEvent.value = null;
   popup.value.visible = false;
 };
 
@@ -71,7 +74,7 @@ const onClosePopup = () => {
 };
 
 const addEvent = (eventDto: TEventDto) => {
-  let calendarApi = lastSelectInfo.value.view.calendar;
+  let calendarApi = lastInfo.value.view.calendar;
 
   calendarApi.addEvent({
     id: createEventId(),
@@ -103,19 +106,22 @@ const onSubmit = (formDataDto: TEventDto) => {
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
-  console.log({ events });
 };
 
-const handleEventClick = (selectInfo: ISelectInfo) => {
+const handleEventClick = (clickInfo: EventClickArg) => {
   activeEvent.value = currentEvents.value.find(
-    (event: IEvent) => event.id === selectInfo.event.id,
+    (event: IEvent) => event.id === clickInfo.event.id,
   );
+
+  lastInfo.value = clickInfo;
+
+  const date = new Date(clickInfo.event.startStr);
 
   popup.value = {
     visible: true,
-    top: selectInfo?.jsEvent.screenY - 200,
-    left: selectInfo?.jsEvent.screenX - 200,
-    date: selectInfo?.dateStr,
+    top: clickInfo.jsEvent.screenY - 200,
+    left: clickInfo.jsEvent.screenX - 200,
+    date: date.toISOString(),
   };
 };
 
@@ -179,8 +185,9 @@ onUnmounted(() => {
     >
     </FullCalendar>
     <DatePopup
+      :is-all-day="isAllDay"
       :activeEvent="activeEvent"
-      :info="lastSelectInfo"
+      :last-info="lastInfo"
       :hours="slots"
       :popup="popup"
       @onClosePopup="onClosePopup"

@@ -1,5 +1,6 @@
-import type { ISelectInfo, THour } from "./types/calendar.ts";
+import type { THour } from "./types/calendar.ts";
 import { hours } from "./mocks/hour-select.ts";
+import { type DateSelectArg } from "@fullcalendar/core";
 
 let eventGuid = 0;
 export const formatToYYYYMMDD = (isoDate: string) =>
@@ -34,7 +35,7 @@ export const setActiveCell = (data: string) => {
   return activeElement;
 };
 
-export const adjustSlots = (selectInfo: ISelectInfo) => {
+export const adjustSlots = (selectInfo: DateSelectArg) => {
   let calendarApi = selectInfo.view.calendar;
   const allEvents = calendarApi.getEvents();
 

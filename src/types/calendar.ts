@@ -1,4 +1,3 @@
-import { type ViewApi } from "@fullcalendar/core";
 import { type EventInput } from "@fullcalendar/core";
 
 export type THour = {
@@ -18,30 +17,6 @@ export type TEventDto = {
   timeStart: Date | string;
   timeEnd: Date | string;
 };
-
-export type TEventUpdateDto = {
-  title: string;
-  timeStart: Date;
-  timeEnd: Date;
-  startStr: string;
-  endStr: string;
-};
-
-export interface ISelectInfo {
-  start: Date;
-  end: Date;
-  startStr: string;
-  endStr: string;
-  allDay: boolean;
-  view: ViewApi;
-  jsEvent: any;
-  dateStr: string;
-  event: any;
-}
-
-export interface IClickInfo extends ISelectInfo {
-  id: string;
-}
 
 export type TPopup = {
   visible: boolean;
