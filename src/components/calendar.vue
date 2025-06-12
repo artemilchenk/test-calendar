@@ -11,7 +11,7 @@ import {
   INITIAL_EVENTS,
   setActiveCell,
 } from "../event-utils.ts";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import type { IEvent, TEventDto, TPopup } from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
 import {
@@ -34,11 +34,14 @@ const slots = ref();
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
 const activeEvent = ref();
-const isAllDay = ref();
+const isAllDay = ref(true);
+
+watch(isAllDay, (value) => {
+  console.log({ value });
+});
 
 const handleDateSelect = async (selectInfo: DateSelectArg) => {
   lastInfo.value = selectInfo;
-  isAllDay.value = selectInfo.allDay;
 
   if (selectInfo.allDay) {
     const updatedSlots = adjustSlots(selectInfo);
@@ -106,7 +109,6 @@ const onSubmit = (formDataDto: TEventDto) => {
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
-  console.log({ events });
 };
 
 const handleEventClick = (clickInfo: EventClickArg) => {
@@ -135,7 +137,37 @@ const calendarOptions = {
   },
   customButtons: {
     Agenda: {
-      text: "Agenda",
+      text: "agenda",
+    },
+
+    dayGridMonth: {
+      text: "month",
+      click: () => {
+        const calendarApi = calendarRef.value.getApi();
+
+        calendarApi.changeView("dayGridMonth");
+        isAllDay.value = true;
+      },
+    },
+
+    timeGridWeek: {
+      text: "week",
+      click: () => {
+        const calendarApi = calendarRef.value.getApi();
+
+        calendarApi.changeView("timeGridWeek");
+        isAllDay.value = false;
+      },
+    },
+
+    timeGridDay: {
+      text: "day",
+      click: () => {
+        const calendarApi = calendarRef.value.getApi();
+
+        calendarApi.changeView("timeGridDay");
+        isAllDay.value = false;
+      },
     },
   },
   buttonText: {
