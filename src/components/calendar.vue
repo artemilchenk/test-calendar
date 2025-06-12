@@ -37,9 +37,8 @@ const activeEvent = ref();
 const isAllDay = ref();
 
 const handleDateSelect = async (selectInfo: DateSelectArg) => {
-  isAllDay.value = selectInfo.allDay;
-
   lastInfo.value = selectInfo;
+  isAllDay.value = selectInfo.allDay;
 
   if (selectInfo.allDay) {
     const updatedSlots = adjustSlots(selectInfo);
@@ -66,6 +65,7 @@ const handleDateSelect = async (selectInfo: DateSelectArg) => {
 const closePopup = () => {
   activeCell.value?.classList.remove("active");
   activeCell.value = null;
+  activeEvent.value = null;
   popup.value.visible = false;
 };
 
@@ -106,16 +106,15 @@ const onSubmit = (formDataDto: TEventDto) => {
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
-
   console.log({ events });
 };
 
 const handleEventClick = (clickInfo: EventClickArg) => {
+  lastInfo.value = clickInfo;
+
   activeEvent.value = currentEvents.value.find(
     (event: IEvent) => event.id === clickInfo.event.id,
   );
-
-  lastInfo.value = clickInfo;
 
   const date = new Date(clickInfo.event.startStr);
 
