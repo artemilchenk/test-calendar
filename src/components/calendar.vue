@@ -13,12 +13,18 @@ import {
   setSelectCustomInfo,
 } from "../event-utils.ts";
 import { onMounted, onUnmounted, ref } from "vue";
-import type { IEvent, TEventDto, TPopup } from "@/types/calendar.ts";
+import type {
+  IEvent,
+  TEventBody,
+  TEventDto,
+  TPopup,
+} from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
 import {
   type CalendarOptions,
   type DateSelectArg,
   type EventClickArg,
+  type ViewApi,
 } from "@fullcalendar/core";
 
 const defPopupState = {
@@ -34,9 +40,18 @@ const currentEvents = ref();
 const slots = ref();
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
-const activeEvent = ref();
-const isAllDay = ref();
-const selectInfoCustom = ref();
+const activeEvent = ref<IEvent | null>(null);
+const isAllDay = ref(true);
+const selectInfoCustom = ref<{
+  jsEvent: MouseEvent | null;
+  view: ViewApi;
+  allDay: boolean;
+  start: Date;
+  end: Date;
+  startStr: string;
+  endStr: string;
+  eventBody: TEventBody;
+}>();
 
 const handleDateSelect = async (selectInfo: DateSelectArg) => {
   lastInfo.value = selectInfo;
@@ -245,9 +260,9 @@ onUnmounted(() => {
     </FullCalendar>
     <DatePopup
       v-if="selectInfoCustom"
-      :select-info-custom="selectInfoCustom"
+      :selectInfoCustom="selectInfoCustom"
       :is-all-day="isAllDay"
-      :active-event="activeEvent"
+      :activeEvent="activeEvent"
       :last-info="lastInfo"
       :hours="slots"
       :popup="popup"
