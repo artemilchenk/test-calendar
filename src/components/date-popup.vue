@@ -22,7 +22,7 @@ type TPopupProps = {
   popup: TPopup;
   activeEvent: Ref<IEvent | null>;
   selectInfoCustom: Ref<ISelectInfoCustom>;
-  isAllDay: Ref<boolean>;
+  isAllDay: boolean;
 };
 
 const props = defineProps<TPopupProps>();
