@@ -20,8 +20,8 @@ type TPopupProps = {
   lastInfo: Ref<DateSelectArg | EventClickArg>;
   hours: THour[];
   popup: TPopup;
-  activeEvent: Ref<IEvent | null>;
-  selectInfoCustom: Ref<ISelectInfoCustom>;
+  activeEvent: IEvent | null;
+  selectInfoCustom: ISelectInfoCustom;
   isAllDay: boolean;
 };
 
