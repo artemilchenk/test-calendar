@@ -12,7 +12,7 @@ import {
   setActiveCell,
   setSelectCustomInfo,
 } from "../event-utils.ts";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import type {
   IEvent,
   TEventBody,
@@ -153,7 +153,6 @@ const onSubmit = (formDataDto: TEventDto) => {
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
-  console.log({ events });
 };
 
 const handleEventClick = (clickInfo: EventClickArg) => {
@@ -234,7 +233,8 @@ function handleClickOutside(event: any) {
   const el = document.querySelector(".popup");
 
   if (el && !el.contains(event.target)) {
-    closePopup();
+    disActiveCell();
+    removeActiveEvent();
   }
 }
 
@@ -267,7 +267,6 @@ onUnmounted(() => {
       :hours="slots"
       :popup="popup"
       @onClosePopup="onClosePopup"
-      :closePopup="closePopup"
       @onSubmit="onSubmit"
     />
   </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, type Ref, toRefs, watch, watchEffect } from "vue";
+import { type Ref, toRefs, watchEffect } from "vue";
 import {
   formatToHHMM,
   formatToYYYYMMDD,
