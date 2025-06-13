@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { type Ref, ref, toRefs, watch } from "vue";
-import { formatHHMM, formatToYYYYMMDD } from "@/event-utils.ts";
+import { onMounted, type Ref, toRefs, watch, watchEffect } from "vue";
+import {
+  formatToHHMM,
+  formatToYYYYMMDD,
+  fromHHMMToIsoDate,
+} from "@/event-utils.ts";
 import { CgCloseO } from "@kalimahapps/vue-icons";
 import type {
-  TFormData,
   TEventDto,
   THour,
   TPopup,
   IEvent,
+  ISelectInfoCustom,
 } from "@/types/calendar.ts";
 import { type DateSelectArg, type EventClickArg } from "@fullcalendar/core";
 import { isClickInfo } from "@/guards/calendar.ts";
@@ -16,69 +20,77 @@ type TPopupProps = {
   lastInfo: Ref<DateSelectArg | EventClickArg>;
   hours: THour[];
   popup: TPopup;
-  activeEvent: Ref<IEvent>;
+  activeEvent: Ref<IEvent | null>;
+  selectInfoCustom: Ref<ISelectInfoCustom>;
   isAllDay: Ref<boolean>;
 };
 
 const props = defineProps<TPopupProps>();
-const { lastInfo, hours, popup, activeEvent, isAllDay } = toRefs(props);
+const { lastInfo, hours, popup, isAllDay, selectInfoCustom, activeEvent } =
+  toRefs(props);
 
 const emit = defineEmits<{
   (e: "onSubmit", arg: TEventDto): void;
   (e: "onClosePopup"): void;
 }>();
 
-let formData = ref<TFormData>({
-  name: "",
-  time: "",
-});
-
-watch(activeEvent, (value) => {
-  formData.value.name = value?.title || "";
-  formData.value.time = formatHHMM(value?.startStr || "");
-});
-
-const resetPopupForm = () => {
-  formData.value.time = "";
-  formData.value.name = "";
+const resetEventBody = () => {
+  selectInfoCustom.value.eventBody.startIsoCustom = "";
+  selectInfoCustom.value.eventBody.endIsoCustom = "";
+  selectInfoCustom.value.eventBody.name = "";
 };
 
+watchEffect(() => {
+  if (activeEvent.value && popup.value.visible) {
+    selectInfoCustom.value.eventBody.name = activeEvent.value.title || "";
+    selectInfoCustom.value.eventBody.startIsoCustom =
+      activeEvent.value.startStr;
+    selectInfoCustom.value.eventBody.endIsoCustom = activeEvent.value.endStr;
+  }
+});
+
 const onClosePopupHandler = () => {
-  resetPopupForm();
   emit("onClosePopup");
+  resetEventBody();
 };
 
 const onSubmitHandler = () => {
-  const lastInfoStartStr = isClickInfo(lastInfo.value)
-    ? lastInfo.value.event.startStr
-    : lastInfo.value.startStr;
-
-  const lastInfoStartEnd = isClickInfo(lastInfo.value)
-    ? isAllDay.value
-      ? lastInfo.value.event.startStr
-      : lastInfo.value.event.endStr
-    : isAllDay.value
-      ? lastInfo.value.startStr
-      : lastInfo.value.endStr;
-
-  const allDayStart = new Date(lastInfoStartStr);
-  allDayStart.setHours(+formData.value.time.split(":")[0]);
-
-  const allDayEnd = new Date(lastInfoStartEnd);
-  allDayEnd.setHours(+formData.value.time.split(":")[0] + 2);
+  activeEvent.value = null;
 
   emit("onSubmit", {
-    name: formData.value.name,
-    timeStart: isAllDay.value ? allDayStart : lastInfoStartStr,
-    timeEnd: isAllDay.value ? allDayEnd : lastInfoStartEnd,
+    name: selectInfoCustom.value.eventBody.name,
+    timeStart: selectInfoCustom.value.eventBody.startIsoCustom,
+    timeEnd: selectInfoCustom.value.eventBody.endIsoCustom,
   });
 
-  resetPopupForm();
+  resetEventBody();
 };
+
+function onTimeSelectChange(event: Event) {
+  const target = event.target as HTMLSelectElement;
+
+  const [hours, minutes] = target.value.split(":");
+
+  selectInfoCustom.value.eventBody.startIsoCustom = fromHHMMToIsoDate(
+    target.value,
+    selectInfoCustom.value.eventBody.startIsoCustom,
+  );
+
+  selectInfoCustom.value.eventBody.endIsoCustom = fromHHMMToIsoDate(
+    `${+hours + 2}:${minutes}`,
+    selectInfoCustom.value.eventBody.startIsoCustom,
+  );
+}
+
+function onTimeInputChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  selectInfoCustom.value.eventBody.name = target.value;
+}
 </script>
 
 <template>
   <div
+    @click.stop
     v-if="popup.visible"
     class="popup"
     :style="{
@@ -87,7 +99,6 @@ const onSubmitHandler = () => {
       left: popup.left + 'px',
       zIndex: 1000,
     }"
-    @click.stop
   >
     <div class="flex justify-between items-center">
       <CgCloseO class="close" @click="onClosePopupHandler" />
@@ -96,7 +107,8 @@ const onSubmitHandler = () => {
     <input
       required
       type="text"
-      v-model="formData.name"
+      @change="onTimeInputChange"
+      :value="selectInfoCustom.eventBody.name"
       placeholder="Event title"
       class="mt-2 border p-1 w-full"
     />
@@ -116,7 +128,13 @@ const onSubmitHandler = () => {
       <div>
         <label for="hourSelect">Hour:</label>
 
-        <select required v-model="formData.time" id="hourSelect" name="hour">
+        <select
+          required
+          @change="onTimeSelectChange"
+          :value="formatToHHMM(selectInfoCustom.eventBody.startIsoCustom)"
+          id="hourSelect"
+          name="hour"
+        >
           <option v-for="item in hours" :key="item.id" :disabled="item.booked">
             {{ item.value }}
           </option>

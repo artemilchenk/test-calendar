@@ -10,14 +10,21 @@ import {
   formatToYYYYMMDD,
   INITIAL_EVENTS,
   setActiveCell,
+  setSelectCustomInfo,
 } from "../event-utils.ts";
 import { onMounted, onUnmounted, ref, watch } from "vue";
-import type { IEvent, TEventDto, TPopup } from "@/types/calendar.ts";
+import type {
+  IEvent,
+  TEventBody,
+  TEventDto,
+  TPopup,
+} from "@/types/calendar.ts";
 import DatePopup from "@/components/date-popup.vue";
 import {
   type CalendarOptions,
   type DateSelectArg,
   type EventClickArg,
+  type ViewApi,
 } from "@fullcalendar/core";
 
 const defPopupState = {
@@ -33,15 +40,35 @@ const currentEvents = ref();
 const slots = ref();
 const activeCell = ref<Element | null>(null);
 const popup = ref<TPopup>(defPopupState);
-const activeEvent = ref();
+const activeEvent = ref<IEvent | null>(null);
 const isAllDay = ref(true);
-
-watch(isAllDay, (value) => {
-  console.log({ value });
-});
+const selectInfoCustom = ref<{
+  jsEvent: MouseEvent | null;
+  view: ViewApi;
+  allDay: boolean;
+  start: Date;
+  end: Date;
+  startStr: string;
+  endStr: string;
+  eventBody: TEventBody;
+}>();
 
 const handleDateSelect = async (selectInfo: DateSelectArg) => {
   lastInfo.value = selectInfo;
+
+  const notAllDayEnd = new Date(
+    !isAllDay.value ? selectInfo.endStr : selectInfo.startStr,
+  );
+  notAllDayEnd.setDate(
+    new Date(selectInfo.endStr).getDate() - (isAllDay.value ? 1 : 0),
+  );
+
+  selectInfoCustom.value = setSelectCustomInfo(selectInfo, {
+    startIsoCustom: selectInfo.startStr,
+    endIsoCustom: !isAllDay
+      ? new Date(selectInfo.endStr).toISOString()
+      : notAllDayEnd.toISOString(),
+  });
 
   if (selectInfo.allDay) {
     const updatedSlots = adjustSlots(selectInfo);
@@ -57,6 +84,12 @@ const handleDateSelect = async (selectInfo: DateSelectArg) => {
 
   const date = new Date(selectInfo.start);
 
+  addEvent({
+    name: selectInfoCustom.value?.eventBody.name || "",
+    timeStart: selectInfoCustom.value?.eventBody.startIsoCustom || "",
+    timeEnd: selectInfoCustom.value?.eventBody.endIsoCustom || "",
+  });
+
   popup.value = {
     visible: true,
     top: selectInfo.jsEvent.screenY - 200,
@@ -65,58 +98,66 @@ const handleDateSelect = async (selectInfo: DateSelectArg) => {
   };
 };
 
-const closePopup = () => {
+const disActiveCell = () => {
   activeCell.value?.classList.remove("active");
   activeCell.value = null;
-  activeEvent.value = null;
   popup.value.visible = false;
 };
 
+const removeActiveEvent = () => {
+  if (activeEvent.value) {
+    activeEvent.value.remove();
+    activeEvent.value = null;
+  }
+};
+
 const onClosePopup = () => {
-  closePopup();
+  disActiveCell();
+  removeActiveEvent();
+};
+
+const setActiveEvent = (id: string) => {
+  activeEvent.value = currentEvents.value.find(
+    (event: IEvent) => event.id === id,
+  );
 };
 
 const addEvent = (eventDto: TEventDto) => {
   let calendarApi = lastInfo.value.view.calendar;
 
+  const eventId = createEventId();
+
   calendarApi.addEvent({
-    id: createEventId(),
+    id: eventId,
     title: eventDto.name,
-    start: new Date(eventDto.timeStart).toISOString(),
-    end: new Date(eventDto.timeEnd).toISOString(),
+    start: eventDto.timeStart,
+    end: eventDto.timeEnd,
     allDay: false,
   });
 
-  closePopup();
+  setActiveEvent(eventId);
 };
 
 const updateEvent = (eventBody: TEventDto) => {
   if (!activeEvent?.value) return;
 
   activeEvent.value.setProp("title", eventBody.name);
-  activeEvent.value.setStart(new Date(eventBody.timeStart).toISOString());
-  activeEvent.value.setEnd(new Date(eventBody.timeEnd).toISOString());
+  activeEvent.value.setStart(eventBody.timeStart);
+  activeEvent.value.setEnd(eventBody.timeEnd);
 };
 
 const onSubmit = (formDataDto: TEventDto) => {
-  if (activeEvent.value) {
-    updateEvent(formDataDto);
-    closePopup();
-  } else {
-    addEvent(formDataDto);
-  }
+  updateEvent(formDataDto);
+  disActiveCell();
 };
 
 const handleEvents = (events: IEvent) => {
   currentEvents.value = events;
+  console.log({ events });
 };
 
 const handleEventClick = (clickInfo: EventClickArg) => {
   lastInfo.value = clickInfo;
-
-  activeEvent.value = currentEvents.value.find(
-    (event: IEvent) => event.id === clickInfo.event.id,
-  );
 
   const date = new Date(clickInfo.event.startStr);
 
@@ -218,6 +259,8 @@ onUnmounted(() => {
     >
     </FullCalendar>
     <DatePopup
+      v-if="selectInfoCustom"
+      :selectInfoCustom="selectInfoCustom"
       :is-all-day="isAllDay"
       :activeEvent="activeEvent"
       :last-info="lastInfo"

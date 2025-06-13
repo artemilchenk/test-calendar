@@ -1,4 +1,4 @@
-import type { THour } from "./types/calendar.ts";
+import type { ISelectInfoCustom, TEventBody, THour } from "./types/calendar.ts";
 import { hours } from "./mocks/hour-select.ts";
 import { type DateSelectArg } from "@fullcalendar/core";
 
@@ -6,7 +6,7 @@ let eventGuid = 0;
 export const formatToYYYYMMDD = (isoDate: string) =>
   new Date(isoDate).toISOString().replace(/T.*$/, "");
 
-export const formatHHMM = (dateArg: Date | string) => {
+export const formatToHHMM = (dateArg: Date | string) => {
   const date = new Date(dateArg);
   const hours = date.getHours();
   let minutes: string | number = date.getMinutes();
@@ -16,6 +16,15 @@ export const formatHHMM = (dateArg: Date | string) => {
   }
 
   return `${hours}:${minutes}`;
+};
+
+export const fromHHMMToIsoDate = (time: string, data: Date | string) => {
+  const formatedDate = new Date(data);
+
+  formatedDate.setHours(+time.split(":")[0]);
+  formatedDate.setMinutes(+time.split(":")[1]);
+
+  return formatedDate.toISOString();
 };
 
 export const INITIAL_EVENTS = [];
@@ -71,4 +80,21 @@ export const adjustSlots = (selectInfo: DateSelectArg) => {
   });
 
   return hours;
+};
+
+export const setSelectCustomInfo = (
+  selectInfo: DateSelectArg,
+  body: Partial<TEventBody>,
+): ISelectInfoCustom | undefined => {
+  const startDate = new Date(body.startIsoCustom || new Date());
+  let endDate = new Date(body.endIsoCustom || new Date());
+
+  return {
+    ...selectInfo,
+    eventBody: {
+      startIsoCustom: startDate.toISOString(),
+      endIsoCustom: endDate.toISOString(),
+      name: body.name || "",
+    },
+  };
 };

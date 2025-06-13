@@ -13,6 +13,7 @@
     "@fullcalendar/vue3": "^6.1.17",
     "@kalimahapps/vue-icons": "^1.8.1",
     "@vueuse/core": "^13.3.0",
+    "luxon": "^3.6.1",
     "prettier": "^3.5.3",
     "sass-embedded": "^1.89.1",
     "vue": "^3.5.13"
@@ -21,6 +22,7 @@
     "@fullcalendar/daygrid": "^6.1.17",
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@types/luxon": "^3.6.2",
     "@types/node": "^22.15.29",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/tsconfig": "^0.7.0",

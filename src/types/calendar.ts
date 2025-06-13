@@ -1,4 +1,4 @@
-import { type EventInput } from "@fullcalendar/core";
+import { type DateSelectArg, type EventInput } from "@fullcalendar/core";
 
 export type THour = {
   id: number;
@@ -9,7 +9,7 @@ export type THour = {
 
 export type TFormData = {
   name: string;
-  time: string;
+  isoTime: string;
 };
 
 export type TEventDto = {
@@ -28,4 +28,14 @@ export type TPopup = {
 export interface IEvent extends EventInput {
   startStr: string;
   endStr: string;
+}
+
+export type TEventBody = {
+  startIsoCustom: string;
+  endIsoCustom: string;
+  name: string;
+};
+
+export interface ISelectInfoCustom extends DateSelectArg {
+  eventBody: TEventBody;
 }
